@@ -1,0 +1,253 @@
+">
+                            <div class="slider-header">
+                                <span>Volume</span>
+                                <span id="speakerVolume">50%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="50" class="slider volume" id="speakerSlider" oninput="setSpeakerVolume(this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Security -->
+                    <div class="control-card">
+                        <div class="control-header">
+                            <div class="control-title">
+                                <span class="control-icon">🛡️</span>
+                                <span>SECURITY</span>
+                            </div>
+                            <div class="toggle-switch security" id="securityToggle" onclick="toggleSecurity()">
+                                <div class="toggle-knob"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="bottom-bar">
+                <div class="action-buttons">
+                    <button class="action-btn primary">
+                        <span>⚙️</span>
+                        <span>Settings</span>
+                    </button>
+                    <button class="action-btn secondary">
+                        <span>📱</span>
+                        <span>All Devices</span>
+                    </button>
+                </div>
+                <div class="uptime-display">
+                    <div class="uptime-label">System Uptime</div>
+                    <div class="uptime-value" id="uptime">0h 0m 0s</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let state = {
+            systemPower: true,
+            temperature: 72,
+            ceilingLight: { on: true, brightness: 75 },
+            floorLamp: { on: false, brightness: 50 },
+            tv: { on: true },
+            speaker: { on: false, volume: 50 },
+            security: { armed: false }
+        };
+
+        let startTime = Date.now();
+
+        // Update uptime
+        function updateUptime() {
+            const elapsed = Date.now() - startTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('uptime').textContent = `${hours}h ${minutes}m ${seconds}s`;
+        }
+        setInterval(updateUptime, 1000);
+
+        // Toggle Power
+        function togglePower() {
+            state.systemPower = !state.systemPower;
+            const btn = document.getElementById('powerButton');
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            if (state.systemPower) {
+                btn.classList.remove('off');
+                btn.classList.add('on');
+                dot.classList.remove('off');
+                text.textContent = 'System Status: ONLINE';
+            } else {
+                btn.classList.remove('on');
+                btn.classList.add('off');
+                dot.classList.add('off');
+                text.textContent = 'System Status: OFFLINE';
+            }
+            
+            updateVisuals();
+            updateStats();
+        }
+
+        // Temperature
+        function adjustTemp(delta) {
+            state.temperature = Math.max(60, Math.min(85, state.temperature + delta));
+            document.getElementById('tempValue').textContent = state.temperature;
+            document.getElementById('tempSlider').value = state.temperature;
+            updateStats();
+        }
+
+        function setTemp(value) {
+            state.temperature = parseInt(value);
+            document.getElementById('tempValue').textContent = state.temperature;
+            updateStats();
+        }
+
+        // Ceiling Light
+        function toggleCeiling() {
+            state.ceilingLight.on = !state.ceilingLight.on;
+            const toggle = document.getElementById('ceilingToggle');
+            const container = document.getElementById('ceilingSliderContainer');
+            
+            toggle.classList.toggle('on');
+            container.style.display = state.ceilingLight.on ? 'block' : 'none';
+            
+            updateVisuals();
+            updateStats();
+        }
+
+        function setCeilingBrightness(value) {
+            state.ceilingLight.brightness = parseInt(value);
+            document.getElementById('ceilingBrightness').textContent = value + '%';
+            updateVisuals();
+        }
+
+        // Floor Lamp
+        function toggleLamp() {
+            state.floorLamp.on = !state.floorLamp.on;
+            const toggle = document.getElementById('lampToggle');
+            const container = document.getElementById('lampSliderContainer');
+            
+            toggle.classList.toggle('on');
+            container.style.display = state.floorLamp.on ? 'block' : 'none';
+            
+            updateVisuals();
+            updateStats();
+        }
+
+        function setLampBrightness(value) {
+            state.floorLamp.brightness = parseInt(value);
+            document.getElementById('lampBrightness').textContent = value + '%';
+            updateVisuals();
+        }
+
+        // TV
+        function toggleTV() {
+            state.tv.on = !state.tv.on;
+            const toggle = document.getElementById('tvToggle');
+            const screen = document.getElementById('tvScreen');
+            
+            toggle.classList.toggle('on');
+            screen.classList.toggle('on');
+            
+            updateStats();
+        }
+
+        // Speaker
+        function toggleSpeaker() {
+            state.speaker.on = !state.speaker.on;
+            const toggle = document.getElementById('speakerToggle');
+            const container = document.getElementById('speakerSliderContainer');
+            const box = document.getElementById('speakerBox');
+            
+            toggle.classList.toggle('on');
+            container.style.display = state.speaker.on ? 'block' : 'none';
+            box.classList.toggle('on');
+            
+            updateStats();
+        }
+
+        function setSpeakerVolume(value) {
+            state.speaker.volume = parseInt(value);
+            document.getElementById('speakerVolume').textContent = value + '%';
+        }
+
+        // Security
+        function toggleSecurity() {
+            state.security.armed = !state.security.armed;
+            const toggle = document.getElementById('securityToggle');
+            toggle.classList.toggle('on');
+            updateStats();
+        }
+
+        // Update Visuals
+        function updateVisuals() {
+            if (!state.systemPower) {
+                // Turn everything off
+                document.getElementById('ambientLight').style.opacity = '0';
+                document.getElementById('ceilingGlow').style.opacity = '0';
+                document.getElementById('ceilingGlowOuter').style.opacity = '0';
+                document.getElementById('lampLight').style.opacity = '0';
+                document.getElementById('lampGlow').style.opacity = '0';
+                return;
+            }
+
+            // Calculate ambient brightness
+            let maxBrightness = 0;
+            if (state.ceilingLight.on) {
+                maxBrightness = Math.max(maxBrightness, state.ceilingLight.brightness);
+            }
+            if (state.floorLamp.on) {
+                maxBrightness = Math.max(maxBrightness, state.floorLamp.brightness);
+            }
+
+            // Update ambient light
+            document.getElementById('ambientLight').style.opacity = maxBrightness / 100;
+
+            // Update ceiling light
+            if (state.ceilingLight.on) {
+                const brightness = state.ceilingLight.brightness / 100;
+                document.getElementById('ceilingGlow').style.opacity = brightness;
+                document.getElementById('ceilingGlowOuter').style.opacity = brightness * 0.7;
+            } else {
+                document.getElementById('ceilingGlow').style.opacity = '0';
+                document.getElementById('ceilingGlowOuter').style.opacity = '0';
+            }
+
+            // Update floor lamp
+            if (state.floorLamp.on) {
+                const brightness = state.floorLamp.brightness / 100;
+                document.getElementById('lampLight').style.opacity = brightness;
+                document.getElementById('lampGlow').style.opacity = brightness * 0.8;
+            } else {
+                document.getElementById('lampLight').style.opacity = '0';
+                document.getElementById('lampGlow').style.opacity = '0';
+            }
+        }
+
+        // Update Stats
+        function updateStats() {
+            let activeCount = 0;
+            let powerDraw = 0;
+
+            if (state.systemPower) {
+                if (state.ceilingLight.on) { activeCount++; powerDraw += 12.5; }
+                if (state.floorLamp.on) { activeCount++; powerDraw += 12.5; }
+                if (state.tv.on) { activeCount++; powerDraw += 12.5; }
+                if (state.speaker.on) { activeCount++; powerDraw += 12.5; }
+            }
+
+            document.getElementById('activeCount').textContent = activeCount;
+            document.getElementById('powerDraw').textContent = powerDraw.toFixed(1);
+            document.getElementById('statPower').textContent = powerDraw.toFixed(0) + 'W';
+            document.getElementById('statActive').textContent = activeCount;
+            document.getElementById('statTemp').textContent = state.temperature + '°F';
+            document.getElementById('statSecurity').textContent = state.security.armed ? 'ON' : 'OFF';
+        }
+
+        // Initialize
+        updateVisuals();
+        updateStats();
+    </script>
+</body>
+</html>
